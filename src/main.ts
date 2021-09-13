@@ -1,13 +1,21 @@
-import express from "express";
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { ValidationPipe } from '@nestjs/common';
 
-export const app = express();
+async function bootstrap() {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ logger: true }));
+  app.useGlobalPipes(new ValidationPipe());
 
-app.use(express.json());
+  const documentBuilder = new DocumentBuilder()
+    .setTitle('Ghostbuster - Blacklist')
+    .setVersion(process.env.VERSION)
+    .build();
 
-import "./Routes/api";
+  const document = SwaggerModule.createDocument(app, documentBuilder);
+  SwaggerModule.setup('swagger', app, document);
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-    console.log(`server started at http://localhost:${port}`);
-});
+  await app.listen(3000);
+}
+bootstrap();
